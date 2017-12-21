@@ -19,14 +19,9 @@ module.exports = function (grunt) {
 
   grunt.loadNpmTasks('grunt-newer');
   grunt.loadNpmTasks('grunt-contrib-watch');
-
   grunt.loadNpmTasks('grunt-contrib-clean');
-
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   grunt.registerTask('js', ['newer:uglify:all']);
-
-  grunt.registerTask('watch', ['watch:js']);
-
   grunt.registerTask('default', ['clean', 'js']);
 };
