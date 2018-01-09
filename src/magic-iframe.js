@@ -2,14 +2,7 @@
     'use strict';
 
     if (!window.postMessage) {
-        if (window.console) {
-            var error = 'MIF: no postMessage support. MIF terminating.';
-
-            if (console.error) console.error(error);
-            else if (console.warn) console.warn(error);
-            else if (console.log) console.log(error);
-        }
-        return;
+        return console.error('MIF: no postMessage support. MIF terminating.');
     }
 
     var requestAnimationFrame = (function () {
@@ -34,13 +27,9 @@
         if (_registeredParentListeners) return;
 
         if (window.addEventListener) {
-            window.addEventListener('message', function (e) {
-                handleMessage(e);
-            }, false);
+            window.addEventListener('message', handleMessage, false);
         } else if (window.attachEvent) {
-            window.attachEvent('onmessage', function (e) {
-                handleMessage(e);
-            });
+            window.attachEvent('onmessage', handleMessage);
         }
 
         _registeredParentListeners = true;
@@ -54,9 +43,7 @@
             }
             return;
         }
-
         registerParentListeners();
-
         registeredIframes.push(element);
     };
 
@@ -67,11 +54,8 @@
 
         for (var key in message) {
             if (!message.hasOwnProperty(key)) continue;
-
             if (messageStr.length) messageStr += '&';
-            messageStr += key;
-            messageStr += '=';
-            messageStr += encodeURIComponent(message[key]);
+            messageStr += key + '=' + encodeURIComponent(message[key]);
         }
 
         return messageStr;
@@ -93,27 +77,26 @@
         return message;
     };
 
-    var getFullHeight = function () {
-        return Math.max(
-            document.documentElement.offsetHeight,
-            document.documentElement.scrollHeight
-        );
+    var getFullHeight = function (selector) {
+        const el = document.querySelector(selector);
+        if (el) return (function(el) {
+            return el.clientHeight;
+        })(el);
     };
 
     var _childInitialized = false;
-    var initChild = function () {
+    var initChild = function (params) {
+
         if (window === top) return;
         if (_childInitialized) return;
 
-        var messageParent = function () {
-            var message = encodeMessage({
-                h: getFullHeight()
-            });
+        var messageParent = function (selector) {
+            var message = encodeMessage({ h: getFullHeight(selector) });
             parent.postMessage(message, '*');
         };
 
         requestAnimationFrame(function af() {
-            messageParent();
+            messageParent(params.selector);
             requestAnimationFrame(af);
         });
 
@@ -152,14 +135,7 @@
         } else if (selector.match(/^#[a-z0-9_-]+$/i)) {
             elem = [document.getElementById(selector.substring(1))];
         } else {
-            if (window.console) {
-                var error = 'MIF: no querySelectorAll, jQuery, or simple selector. MIF target ignored.';
-
-                if (console.error) console.error(error);
-                else if (console.warn) console.warn(error);
-                else if (console.log) console.log(error);
-            }
-            return;
+            return console.error('MIF: no querySelectorAll, jQuery, or simple selector. MIF target ignored.');
         }
 
         for (var q = 0; q < elem.length; q++) {
@@ -195,9 +171,9 @@
     };
 
     var MagicIframe = window.MagicIframe = {
-        child: function () {
+        child: function (params) {
             return {
-                init: initChild
+                init: initChild.bind(this, params)
             };
         },
         parent: function (element) {
@@ -213,22 +189,19 @@
         }
     };
 
-    var role = currentScript.getAttribute('data-role');
-    role = (role || '').toLowerCase();
+    var role = (currentScript.getAttribute('data-role') || '').toLowerCase();
+    var selector = (currentScript.getAttribute('data-selector') || 'body').toLowerCase();
 
     if (role === 'child') {
-        MagicIframe.child().init();
+        MagicIframe.child({ selector: selector }).init();
     } else if (role === 'parent') {
-        var target = currentScript.getAttribute('data-target');
-        target = target || '';
+        var target = currentScript.getAttribute('data-target') || '';
 
         if (target.length) {
             initParentBySelector(target);
         }
 
-        var url = currentScript.getAttribute('data-url');
-        url = url || '';
-
+        var url = currentScript.getAttribute('data-url') || '';
         if (url.length) {
             initParentByURL(url);
         }
