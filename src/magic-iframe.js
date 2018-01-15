@@ -144,6 +144,7 @@
     };
 
     var setHeight = function (iframe, height) {
+        if (!iframe) return;
         iframe.height = height;
         iframe.style.height = height + 'px';
     };
