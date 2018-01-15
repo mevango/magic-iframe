@@ -211,21 +211,14 @@
         }
     };
 
-    var role = (currentScript.getAttribute('data-role') || '').toLowerCase();
-    var selector = (currentScript.getAttribute('data-selector') || 'body').toLowerCase();
-
-    if (role === 'child') {
+    var rawEvent = currentScript.getAttribute('data-event');
+    
+    if (!rawEvent) {
+        var selector = (currentScript.getAttribute('data-selector') || 'body').toLowerCase();
         MagicIframe.child({ selector: selector }).init();
-    } else if (role === 'parent') {
-        var target = currentScript.getAttribute('data-target') || '';
-
-        if (target.length) {
-            initParentBySelector(target);
-        }
-
-        var url = currentScript.getAttribute('data-url') || '';
-        if (url.length) {
-            initParentByURL(url);
-        }
+    } else if (rawEvent) {
+        var baseURL = currentScript.getAttribute('data-base') || 'https://flimme.tv/wall/';
+        var event = rawEvent || 'flimmetv';
+        initParentByURL(baseURL + event);
     }
 })();
