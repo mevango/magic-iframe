@@ -1,6 +1,10 @@
 (function () {
     'use strict';
 
+    var FLIMME_COMMUNICATIONS = 'FLM_CMM';
+
+    var lastDataToChild;
+
     if (!window.postMessage) {
         return console.error('MIF: no postMessage support. MIF terminating.');
     }
@@ -45,6 +49,25 @@
         }
         registerParentListeners();
         registeredIframes.push(element);
+
+        requestAnimationFrame(function af() {
+            postToChild(element);
+            requestAnimationFrame(af);
+        });
+
+    };
+
+    var postToChild = function (element) {
+        var rect = element.getBoundingClientRect();
+        var offsetY = (rect.top < 0 && rect.bottom > 0) ? rect.y * -1 : 0;
+        var data = {
+            type: FLIMME_COMMUNICATIONS,
+            y: offsetY
+        };
+        var dataAsString = encodeMessage(data);
+        if (lastDataToChild === dataAsString) return;
+        lastDataToChild = dataAsString;
+        element.contentWindow.postMessage(dataAsString, '*');
     };
 
     var encodeMessage = function (message) {
@@ -91,7 +114,7 @@
         if (_childInitialized) return;
 
         var messageParent = function (selector) {
-            var message = encodeMessage({ h: getFullHeight(selector) });
+            var message = encodeMessage({ type: FLIMME_COMMUNICATIONS, h: getFullHeight(selector) });
             parent.postMessage(message, '*');
         };
 
@@ -106,9 +129,7 @@
     var getSourceIframe = function (event) {
         var frames = document.getElementsByTagName('iframe');
         for (var q = 0; q < frames.length; q++) {
-            if (frames[q].contentWindow === event.source) {
-                return frames[q];
-            }
+            if (frames[q].contentWindow === event.source) return frames[q];
         }
         return null;
     };
@@ -117,7 +138,7 @@
         var iframe = getSourceIframe(event);
         var message = decodeMessage(event.data);
 
-        if (!message.h) return;
+        if (message.type !== FLIMME_COMMUNICATIONS) return;
 
         setHeight(iframe, message.h);
     };
