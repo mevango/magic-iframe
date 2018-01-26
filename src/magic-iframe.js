@@ -67,6 +67,7 @@
         var dataAsString = encodeMessage(data);
         if (lastDataToChild === dataAsString) return;
         lastDataToChild = dataAsString;
+
         element.contentWindow.postMessage(dataAsString, '*');
     };
 
@@ -102,7 +103,7 @@
 
     var getFullHeight = function (selector) {
         const el = document.querySelector(selector);
-        if (el) return (function(el) {
+        if (el) return (function (el) {
             return el.clientHeight;
         })(el);
     };
@@ -115,6 +116,7 @@
 
         var messageParent = function (selector) {
             var message = encodeMessage({ type: FLIMME_COMMUNICATIONS, h: getFullHeight(selector) });
+
             parent.postMessage(message, '*');
         };
 
@@ -211,14 +213,37 @@
         }
     };
 
+    var getParameterByName = function (name, url) {
+        if (!url) url = window.location.href;
+
+        name = name.replace(/[\[\]]/g, "\\$&");
+
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+
+        if (!results) return null;
+
+        if (!results[2]) return '';
+
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    };
+
     var rawEvent = currentScript.getAttribute('data-event');
-    
+
     if (!rawEvent) {
         var selector = (currentScript.getAttribute('data-selector') || 'body').toLowerCase();
+
         MagicIframe.child({ selector: selector }).init();
+
     } else if (rawEvent) {
         var baseURL = currentScript.getAttribute('data-base') || 'https://flimme.tv/wall/';
         var event = rawEvent || 'flimmetv';
-        initParentByURL(baseURL + event);
+        var url = baseURL + event
+
+        var show = getParameterByName('show');
+
+        if (show) url += '?show=' + show;
+
+        initParentByURL(url);
     }
 })();
