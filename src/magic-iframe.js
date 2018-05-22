@@ -21,7 +21,7 @@
     })();
 
     var currentScript = document.currentScript;
-    if (currentScript === null) {
+    if (currentScript === null || currentScript === undefined) {
         var scripts = document.getElementsByTagName('script');
         currentScript = scripts[scripts.length - 1];
     }
